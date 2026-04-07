@@ -1,1 +1,11 @@
+# Dependency directory
+node_modules/
+
+# Environment Variables (Secrets)
+.env
+
+# Build outputs
+dist/
+
+# Configuration
 .mcp.json

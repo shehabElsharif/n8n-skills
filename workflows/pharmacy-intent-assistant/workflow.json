@@ -1,0 +1,281 @@
+{
+  "name": "Pharmacy Intent Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify the following user message like this \ninto EXACTLY one of these categories: \"stock/price inquiry about a product\", \"negotiation\", \"diagnosis\", \"Location\", \"events\", \"services inquiry\", \"Other\".\n\\n\\nUser Message: {{ $json.chatInput }}"
+      },
+      "id": "39a7ce5a-db97-4861-b4ee-b45910116435",
+      "name": "Classifier1",
+      "position": [
+        1152,
+        -176
+      ],
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cond-1",
+                    "leftValue": "={{ $json.text }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "rightValue": "stock/price inquiry about a product"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "574f5809-05c4-4a80-a138-cd87646bd0d2",
+      "name": "Switch1",
+      "position": [
+        1488,
+        -176
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the name of the medicine or product requested in this message. Output ONLY the name.\\n\\nMessage: {{ $('Trigger').item.json.chatInput }}"
+      },
+      "id": "1da52fd3-d019-4581-9c39-39525b603f37",
+      "name": "Extractor1",
+      "position": [
+        1712,
+        -192
+      ],
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "1g64bUP1uhhSed2PtzQjedAhk1lrB-MnrtD98WfcggKc"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1221778372,
+          "mode": "list"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ProductName",
+              "lookupValue": "={{ $json.text.trim() }}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "id": "e7df5b15-30c9-423a-8f69-1ccdf888b42c",
+      "name": "Sheets1",
+      "position": [
+        2080,
+        -192
+      ],
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rep-001",
+              "name": "response",
+              "type": "string",
+              "value": "I understand you're interested in something else. How can I help with your request?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ca5601c9-9148-4503-bd7d-bfcfe4ff4658",
+      "name": "Fallback1",
+      "position": [
+        1568,
+        -448
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The user is asking about {{ $('Extractor1').item.json.text }}. Its price is {{ $json.Price }}. and there is {{ $json.StockQuantity }} in stock. replay very prefely with this information only"
+      },
+      "id": "a6f2a754-2464-4182-b83c-ab775ba34d9e",
+      "name": "Builder1",
+      "position": [
+        2304,
+        -192
+      ],
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "node-1",
+      "name": "Trigger",
+      "position": [
+        944,
+        -176
+      ],
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "webhookId": "c9dad192-d14b-4f3e-bc3d-8fa9178874f7"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "deepseek-ai/deepseek-v3.2",
+          "mode": "list"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        208
+      ],
+      "id": "cbfeaadf-58e1-4a7f-bc75-1553a509a7b8",
+      "name": "nvidia"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-nano",
+          "mode": "list"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        208
+      ],
+      "id": "e524e294-11ad-400a-96c1-5b3104adae0b",
+      "name": "OpenAI Hawana key"
+    }
+  ],
+  "connections": {
+    "Classifier1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extractor1": {
+      "main": [
+        [
+          {
+            "node": "Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Builder1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classifier1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Hawana key": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classifier1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Builder1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

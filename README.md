@@ -123,6 +123,31 @@ Write Python code in n8n Code nodes with proper limitations awareness.
 
 ---
 
+## 🛠️ Local n8n Configuration
+
+For local development and running the MCP server with your specific n8n instance:
+
+### 1. Environment Setup
+Rename the template and fill in your credentials:
+```bash
+cp .env.example .env
+```
+Open **[.env](.env)** and add your `N8N_API_URL` and `N8N_API_KEY`.
+
+### 2. Running the MCP Server
+Use the included startup script to launch the server in `stdio` mode:
+```bash
+chmod +x run-mcp.sh
+./run-mcp.sh
+```
+
+### 📂 Workflow Documentation & Backups
+All n8n workflows are documented in the **[workflows/](./workflows)** directory.
+- **[Technical Guides](./workflows/README.md)**: Each workflow has a dedicated `README.md` explaining its logic and node-by-node breakdown.
+- **[JSON Exports](./workflows/)**: Every workflow folder contains a `workflow.json` which can be imported directly into any n8n instance.
+
+---
+
 ## 🚀 Installation
 
 ### Prerequisites

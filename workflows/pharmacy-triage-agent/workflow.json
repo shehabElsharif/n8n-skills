@@ -1,0 +1,170 @@
+{
+  "name": "Pharmacy Bot — 1. Triage Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "text": "={{ $json.chatInput }}",
+        "guardrails": {
+          "keywords": "chest pain, can't breathe, cant breathe, overdose, took too much, infant emergency, newborn, الم في الصدر, جرعة زائدة, رضيع مريض, صعوبة التنفس"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 1,
+      "position": [ 800, 2016 ],
+      "id": "f34dd8de-fb32-434b-83ca-980dcd192a27",
+      "name": "Safety Keywords"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.chatInput }}",
+        "guardrails": {
+          "jailbreak": { "value": { "threshold": 0.6 } },
+          "topicalAlignment": {
+            "value": {
+              "threshold": 0.5,
+              "prompt": "The message must relate to pharmacy, medicine, health symptoms, medicine prices, medicine availability, or general greetings to a pharmacy. Completely unrelated topics should be flagged."
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 1,
+      "position": [ 800, 2208 ],
+      "id": "6be2f7e1-1cb6-4382-b289-2fe2b72c6dcb",
+      "name": "Jailbreak and Topic Guard"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "saf-rep-001", "name": "response", "value": "هذا الموضوع يحتاج تدخل صيدلاني أو طبيب مباشرة — سنتواصل معك فورًا. 🚨", "type": "string" },
+            { "id": "saf-rep-002", "name": "escalationType", "value": "safety_keyword", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [ 1152, 2016 ],
+      "id": "0100cbf2-420f-4a8e-99df-91863e05840b",
+      "name": "Safety Escalation"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "jlb-rep-001", "name": "response", "value": "عذرًا، ما أقدر أساعد في هذا الطلب. إذا عندك سؤال عن دواء أو صحة، أنا هنا.", "type": "string" },
+            { "id": "jlb-rep-002", "name": "escalationType", "value": "jailbreak_or_offtopic", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [ 1152, 2208 ],
+      "id": "3d5395cb-21cf-4926-81e8-c949cce62feb",
+      "name": "Jailbreak Reply"
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "1g64bUP1uhhSed2PtzQjedAhk1lrB-MnrtD98WfcggKc", "mode": "list" },
+        "sheetName": { "__rl": true, "value": 929496743, "mode": "list" },
+        "filtersUI": {
+          "values": [
+            { "lookupColumn": "Customer ID (Sender PSID)", "lookupValue": "={{ $('Chat').item.json.sessionId }}" }
+          ]
+        },
+        "options": { "returnFirstMatch": true }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [ 864, 1728 ],
+      "id": "e5ac730a-2d99-46e3-b32e-ed4998faa61f",
+      "name": "Client Lookup"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            { "id": "cf-001", "leftValue": "={{ $json.client_id }}", "operator": { "operation": "notEmpty", "singleValue": true, "type": "string" } }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [ 1152, 1728 ],
+      "id": "2a6cc1e4-3212-481c-82c3-95275ab829fb",
+      "name": "Client Found?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "ret-001", "name": "clientContext", "value": "=RETURNING CLIENT — personalise your opening.\nName: {{ $json.name }}\nTone preference: {{ $json.preferred_tone }}\nPrice sensitivity: {{ $json.price_sensitivity }}\nLast technique used: {{ $json.last_technique_used }} → result: {{ $json.last_technique_result }}\nHealth notes: {{ $json.notes }}\nHealth flag: {{ $json.health_flag }}\nPreviously referred to doctor: {{ $json.referred_to_doctor }}\nLast follow-up reason: {{ $json.follow_up_reason }}", "type": "string" },
+            { "id": "ret-002", "name": "isNewClient", "value": false, "type": "boolean" },
+            { "id": "ret-003", "name": "sessionId", "value": "={{ $('Chat').item.json.sessionId }}", "type": "string" },
+            { "id": "ret-004", "name": "chatInput", "value": "={{ $('Chat').item.json.chatInput }}", "type": "string" },
+            { "id": "ret-005", "name": "hasImage", "value": "={{ Object.keys($('Chat').item.binary || {}).length > 0 }}", "type": "boolean" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [ 1600, 1632 ],
+      "id": "bded6711-6fbc-447f-9624-be02f999aab5",
+      "name": "Returning Client Context"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "new-001", "name": "clientContext", "value": "NEW CLIENT — no profile on file. Greet warmly, be natural. If they mention their name, remember it.", "type": "string" },
+            { "id": "new-002", "name": "isNewClient", "value": true, "type": "boolean" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [ 1376, 1824 ],
+      "id": "44b56fc3-d5eb-4d9e-bd49-6b9894098711",
+      "name": "New Client Context"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You are the triage coordinator for a professional Libyan pharmacy sales assistant system. You understand the customer's need and route it to the correct specialist tool. Always respond in the exact language and dialect the customer uses — Libyan Darija, Modern Arabic, or English.\n\n{{ $json.clientContext }}\n\nIMAGE ATTACHED: {{ $json.hasImage }}\nIf true, the customer sent a medicine photo — pass it to Symptom_Bot or Inventory_Bot as appropriate based on context.\n\nRETURNING CUSTOMER RULE: If the profile shows 'referred_to_doctor: true', open with: 'أهلاً — وصلت للدكتور؟ نتمنى تكون بخير.' before doing anything else.\n\nINTENT CLASSIFICATION:\nThe user's intent has already been classified as: {{ $json.intent }}\nUse this classification to guide your tool selection.\n\nTOOL ROUTING RULES:\n- Price, availability, stock, discount, substitute → call Inventory_Bot\n- Symptom, health complaint, someone is sick, what should I take → call Symptom_Bot\n- Unhappy, side effect reported, something didn't work, complaint → call Complaint_Bot\n- AFTER Inventory_Bot confirms availability and customer is interested → call Sales_Closing_Bot\n\nNEVER call Sales_Closing_Bot before Inventory_Bot. Never reverse this.\n\nSYSTEM TAGS — append these silently at the end of your final message, the customer cannot see them:\n- If you tell someone to see a doctor: [REFER_DOCTOR]\n- If a follow-up should be scheduled: [FOLLOWUP:<reason>:<days>] e.g. [FOLLOWUP:sick_family_member:2]\n- If a sale technique was used: [TECHNIQUE:<name>]\n- If customer mentioned their name: [CLIENT_NAME:<name>]\n\nPRIORITY ORDER (never reverse): Medical Safety → Inventory Accuracy → Customer Relationship → Sale"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [ 2368, 1728 ],
+      "id": "87d91628-a58f-4f3f-9eac-0a6a130dc0c2",
+      "name": "Triage Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Chat').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [ 2176, 1952 ],
+      "id": "cef75960-a822-494f-a95f-05bfc42311a9",
+      "name": "Session Memory"
+    }
+  ],
+  "connections": {
+    "Safety Keywords": { "main": [ [ { "node": "Safety Escalation", "type": "main", "index": 0 } ] ] },
+    "Jailbreak and Topic Guard": { "main": [ [ { "node": "Jailbreak Reply", "type": "main", "index": 0 } ] ] },
+    "Client Lookup": { "main": [ [ { "node": "Client Found?", "type": "main", "index": 0 } ] ] },
+    "Client Found?": { "main": [ [ { "node": "Returning Client Context", "type": "main", "index": 0 } ], [ { "node": "New Client Context", "type": "main", "index": 0 } ] ] },
+    "New Client Context": { "main": [ [ { "node": "Create Client Row", "type": "main", "index": 0 } ] ] },
+    "Triage Agent": { "main": [ [ { "node": "Extract Tags", "type": "main", "index": 0 } ] ] },
+    "Session Memory": { "ai_memory": [ [ { "node": "Triage Agent", "type": "ai_memory", "index": 0 } ] ] }
+  }
+}
