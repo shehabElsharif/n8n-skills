@@ -4,7 +4,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Classify the following user message like this \ninto EXACTLY one of these categories: \"stock/price inquiry about a product\", \"negotiation\", \"diagnosis\", \"Location\", \"events\", \"services inquiry\", \"Other\".\n\\n\\nUser Message: {{ $json.chatInput }}"
+        "text": "=Classify the following user message into **EXACTLY one** of these categories: 'stock/price', 'negotiation', 'diagnosis', 'location', 'events', 'services', 'other'.\n\nOutput only the category name.\n\nUser Message: {{ $json.chatInput }}"
       },
       "id": "39a7ce5a-db97-4861-b4ee-b45910116435",
       "name": "Classifier1",
@@ -30,12 +30,12 @@
                 "conditions": [
                   {
                     "id": "cond-1",
-                    "leftValue": "={{ $json.text }}",
+                    "leftValue": "={{ $json.text.toLowerCase().trim() }}",
                     "operator": {
                       "type": "string",
                       "operation": "contains"
                     },
-                    "rightValue": "stock/price inquiry about a product"
+                    "rightValue": "stock/price"
                   }
                 ],
                 "combinator": "and"
@@ -59,7 +59,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Extract the name of the medicine or product requested in this message. Output ONLY the name.\\n\\nMessage: {{ $('Trigger').item.json.chatInput }}"
+        "text": "=Extract the name of the medicine or product requested in this message. **Strip all punctuation (periods, commas, etc.).** Output ONLY the product name in Title Case.\n\nMessage: {{ $('Trigger').item.json.chatInput }}"
       },
       "id": "1da52fd3-d019-4581-9c39-39525b603f37",
       "name": "Extractor1",
@@ -129,7 +129,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=The user is asking about {{ $('Extractor1').item.json.text }}. Its price is {{ $json.Price }}. and there is {{ $json.StockQuantity }} in stock. replay very prefely with this information only"
+        "text": "=The user is asking about {{ $('Extractor1').item.json.text }}. Its price is {{ $json.Price }} and there is {{ $json.StockQuantity }} in stock. Reply very **briefly** with this information only."
       },
       "id": "a6f2a754-2464-4182-b83c-ab775ba34d9e",
       "name": "Builder1",
